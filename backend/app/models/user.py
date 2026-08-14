@@ -1,7 +1,9 @@
 from sqlalchemy import Column, String, Integer, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
+
 from ..database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -12,12 +14,32 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     full_name = Column(String)
     is_active = Column(Boolean, default=True)
+
+    # Subscription:
+    # starter = free / watermarked downloads
+    # creative = paid / original downloads
+    # agency = paid / original downloads
+    plan = Column(
+        String,
+        nullable=False,
+        default="starter",
+        server_default="starter",
+    )
+
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
 
     # Relationships
     events = relationship("Event", back_populates="owner")
-    studio = relationship("Studio", back_populates="user", uselist=False)
+    studio = relationship(
+        "Studio",
+        back_populates="user",
+        uselist=False,
+    )
     leads = relationship("Lead", back_populates="user")
 
     def __repr__(self):

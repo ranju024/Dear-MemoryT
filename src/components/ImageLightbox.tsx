@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
-import { Heart, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { getMediaUrl } from "@/lib/api/client";
+import {
+  Heart,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+} from "lucide-react";
+
+import {
+  getMediaUrl,
+  photosAPI,
+} from "@/lib/api/client";
 
 interface ImageLightboxProps {
   images: Array<{
@@ -99,6 +109,45 @@ export function ImageLightbox({
 
         {/* Bottom controls */}
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4 items-center bg-black/50 px-6 py-3 rounded-full">
+
+          {/* Download button */}
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+
+              try {
+                const response = await photosAPI.download(
+                  currentImage.id,
+                );
+
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+
+                const link = document.createElement("a");
+                link.href = blobUrl;
+                link.download =
+                  currentImage.filename ||
+                  `photo-${currentImage.id}`;
+
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+
+                URL.revokeObjectURL(blobUrl);
+              } catch (error) {
+                console.error(
+                  "Photo download failed:",
+                  error,
+                );
+              }
+            }}
+            className="flex items-center gap-2 text-white hover:text-emerald-300 transition-colors"
+            title="Download"
+          >
+            <Download size={20} />
+          </button>
+
+          {/* Favorite button */}
           <button
             onClick={(e) => {
               e.stopPropagation();

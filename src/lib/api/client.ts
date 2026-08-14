@@ -108,7 +108,28 @@ export const photosAPI = {
     apiCall(`/photos/photo/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   favorite: (id: number) => apiCall(`/photos/photo/${id}/favorite`, { method: "POST" }),
   unfavorite: (id: number) => apiCall(`/photos/photo/${id}/unfavorite`, { method: "POST" }),
-  download: (id: number) => apiCall(`/photos/photo/${id}/download`, { method: "POST" }),
+  // download: (id: number) => apiCall(`/photos/photo/${id}/download`, { method: "POST" }),
+  download: async (id: number) => {
+    const token = getToken();
+
+    const response = await fetch(`${API_BASE_URL}/photos/photo/${id}/download`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) {
+      let message = "Download failed";
+
+      try {
+        const error = await response.json();
+        message = error.detail || message;
+      } catch {}
+
+      throw new Error(message);
+    }
+
+    return response;
+  },
   delete: (id: number) => apiCall(`/photos/photo/${id}`, { method: "DELETE" }),
 };
 
