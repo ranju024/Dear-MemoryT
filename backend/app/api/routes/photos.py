@@ -29,6 +29,9 @@ from ...schemas.photo import (
     PhotoUpdate,
     PhotoResponse,
 )
+from ...services.subscription import (
+    enforce_photo_limit,
+)
 from .auth import get_current_user
 from ...config import (
     UPLOAD_DIR,
@@ -284,7 +287,11 @@ async def upload_photo(
             status_code=403,
             detail="Not authorized",
         )
-
+    enforce_photo_limit(
+        user,
+        event_id,
+        db,
+    )
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(
             status_code=400,

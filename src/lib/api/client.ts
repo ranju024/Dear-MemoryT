@@ -77,16 +77,37 @@ export interface SubscriptionPlan {
   features: string[];
 }
 
+export interface CheckoutResponse {
+  status: string;
+  provider: string;
+  payment_url: string;
+  fields: {
+    amount: string;
+    tax_amount: string;
+    total_amount: string;
+    transaction_uuid: string;
+    product_code: string;
+    product_service_charge: string;
+    product_delivery_charge: string;
+    success_url: string;
+    failure_url: string;
+    signed_field_names: string;
+    signature: string;
+  };
+  plan: string;
+  plan_name: string;
+}
+
 export const subscriptionAPI = {
   getPlans: () => apiCall("/subscription/plans"),
 
   getMe: () => apiCall("/subscription/me"),
 
-  update: (plan: string) =>
-    apiCall("/subscription/me", {
-      method: "PUT",
+  checkout: (plan: string) =>
+    apiCall("/subscription/checkout", {
+      method: "POST",
       body: JSON.stringify({ plan }),
-    }),
+    }) as Promise<CheckoutResponse>,
 };
 
 // EVENTS

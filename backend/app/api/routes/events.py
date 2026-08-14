@@ -9,6 +9,7 @@ from ...models.user import User
 from ...models.event_view import EventView
 import uuid
 from ...schemas.event import EventCreate, EventUpdate, EventResponse, EventDetailResponse
+from ...services.subscription import enforce_event_limit
 from .auth import get_current_user
 import logging
 
@@ -38,6 +39,10 @@ async def create_event(
 ):
     """Create a new event"""
     user = get_current_user(token, db)
+    enforce_event_limit(
+        user,
+        db,
+    )
     
     # Check if slug is unique
     existing = db.query(Event).filter(Event.slug == event.slug).first()

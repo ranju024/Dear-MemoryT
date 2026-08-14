@@ -120,6 +120,47 @@ function Pricing() {
     loadSubscription();
   }, []);
 
+  const startCheckout = async (planId: string) => {
+    setMessage(null);
+    setError(null);
+
+    try {
+      setChangingPlan(planId);
+
+      const checkout = await subscriptionAPI.checkout(planId);
+
+      const form = document.createElement("form");
+
+      form.method = "POST";
+      form.action = checkout.payment_url;
+      form.style.display = "none";
+
+      Object.entries(checkout.fields).forEach(
+        ([key, value]) => {
+          const input = document.createElement("input");
+
+          input.type = "hidden";
+          input.name = key;
+          input.value = String(value);
+
+          form.appendChild(input);
+        },
+      );
+
+      document.body.appendChild(form);
+
+      form.submit();
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Could not start payment.",
+      );
+
+      setChangingPlan(null);
+    }
+  };
+
   const changePlan = async (planId: string) => {
     setMessage(null);
     setError(null);
@@ -248,9 +289,13 @@ function Pricing() {
                     disabled={
                       loading || changingPlan !== null
                     }
-                    onClick={() =>
-                      changePlan(tier.id)
-                    }
+                    onClick={() => {
+                      if (tier.id === "starter") {
+                        window.location.href = "/register";
+                        return;
+                      }                      
+                      startCheckout(tier.id);
+                    }}
                     className={`w-full py-4 rounded-full font-bold mb-8 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       tier.featured
                         ? "bg-white text-emerald hover:bg-cream"
@@ -258,7 +303,7 @@ function Pricing() {
                     }`}
                   >
                     {isChanging
-                      ? "Updating..."
+                      ? "Redirecting to eSewa"
                       : tier.cta}
                   </button>
                 )}

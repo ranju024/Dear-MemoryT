@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from .database import engine, Base
 from .models.event_view import EventView  # register model metadata
+from .models.payment import PaymentTransaction
 from .api.routes import (
     auth,
     events,
