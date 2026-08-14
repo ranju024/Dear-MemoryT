@@ -5,7 +5,17 @@ import os
 from contextlib import asynccontextmanager
 from .database import engine, Base
 from .models.event_view import EventView  # register model metadata
-from .api.routes import auth, events, photos, albums, leads, analytics, studio, guestbook
+from .api.routes import (
+    auth,
+    events,
+    photos,
+    albums,
+    leads,
+    analytics,
+    studio,
+    guestbook,
+    portfolio,
+)
 import logging
 
 # Configure logging
@@ -84,6 +94,7 @@ app.include_router(albums.router, prefix="/api/albums", tags=["albums"])
 app.include_router(leads.router, prefix="/api/leads", tags=["leads"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 app.include_router(studio.router, prefix="/api/studio", tags=["studio"])
+app.include_router(portfolio.router, prefix="/api/portfolio", tags=["portfolio"])
 app.include_router(guestbook.router, prefix="/api/guestbook", tags=["guestbook"])
 
 @app.get("/")

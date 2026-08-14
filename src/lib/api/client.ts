@@ -1,4 +1,7 @@
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000/api").replace(/\/$/, "");
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000/api").replace(
+  /\/$/,
+  "",
+);
 export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
 
 // Store token in localStorage
@@ -73,7 +76,8 @@ export const eventsAPI = {
   },
   get: (id: number) => apiCall(`/events/${id}`),
   getBySlug: (slug: string) => apiCall(`/events/slug/${encodeURIComponent(slug)}`),
-  update: (id: number, data: any) => apiCall(`/events/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  update: (id: number, data: any) =>
+    apiCall(`/events/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   publish: (id: number) => apiCall(`/events/${id}/publish`, { method: "POST" }),
   delete: (id: number) => apiCall(`/events/${id}`, { method: "DELETE" }),
 };
@@ -91,14 +95,17 @@ export const photosAPI = {
     });
     if (!response.ok) {
       let message = "Upload failed";
-      try { message = (await response.json()).detail || message; } catch {}
+      try {
+        message = (await response.json()).detail || message;
+      } catch {}
       throw new Error(message);
     }
     return response.json();
   },
   list: (eventId: number) => apiCall(`/photos/${eventId}`),
   get: (id: number) => apiCall(`/photos/photo/${id}`),
-  update: (id: number, data: any) => apiCall(`/photos/photo/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  update: (id: number, data: any) =>
+    apiCall(`/photos/photo/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   favorite: (id: number) => apiCall(`/photos/photo/${id}/favorite`, { method: "POST" }),
   unfavorite: (id: number) => apiCall(`/photos/photo/${id}/unfavorite`, { method: "POST" }),
   download: (id: number) => apiCall(`/photos/photo/${id}/download`, { method: "POST" }),
@@ -107,42 +114,58 @@ export const photosAPI = {
 
 // ALBUMS
 export const albumsAPI = {
-  create: (eventId: number, data: any) => apiCall(`/albums/${eventId}`, { method: "POST", body: JSON.stringify(data) }),
+  create: (eventId: number, data: any) =>
+    apiCall(`/albums/${eventId}`, { method: "POST", body: JSON.stringify(data) }),
   list: (eventId: number) => apiCall(`/albums/${eventId}`),
   get: (id: number) => apiCall(`/albums/album/${id}`),
-  update: (id: number, data: any) => apiCall(`/albums/album/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  update: (id: number, data: any) =>
+    apiCall(`/albums/album/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   delete: (id: number) => apiCall(`/albums/album/${id}`, { method: "DELETE" }),
-  addPhoto: (albumId: number, photoId: number) => apiCall(`/albums/album/${albumId}/photos/${photoId}`, { method: "POST" }),
-  removePhoto: (albumId: number, photoId: number) => apiCall(`/albums/album/${albumId}/photos/${photoId}`, { method: "DELETE" }),
+  addPhoto: (albumId: number, photoId: number) =>
+    apiCall(`/albums/album/${albumId}/photos/${photoId}`, { method: "POST" }),
+  removePhoto: (albumId: number, photoId: number) =>
+    apiCall(`/albums/album/${albumId}/photos/${photoId}`, { method: "DELETE" }),
 };
 
 // LEADS
 export const leadsAPI = {
   create: (data: any) => apiCall("/leads/", { method: "POST", body: JSON.stringify(data) }),
-  createPublic: (eventSlug: string, data: any) => apiCall(`/leads/public/${encodeURIComponent(eventSlug)}`, { method: "POST", body: JSON.stringify(data) }),
-  list: (status?: string) => apiCall(`/leads/${status ? `?status_filter=${encodeURIComponent(status)}` : ""}`),
+  createPublic: (eventSlug: string, data: any) =>
+    apiCall(`/leads/public/${encodeURIComponent(eventSlug)}`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  list: (status?: string) =>
+    apiCall(`/leads/${status ? `?status_filter=${encodeURIComponent(status)}` : ""}`),
   get: (id: number) => apiCall(`/leads/${id}`),
-  update: (id: number, data: any) => apiCall(`/leads/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-  updateStatus: (id: number, status: string) => apiCall(`/leads/${id}/status/${encodeURIComponent(status)}`, { method: "POST" }),
+  update: (id: number, data: any) =>
+    apiCall(`/leads/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  updateStatus: (id: number, status: string) =>
+    apiCall(`/leads/${id}/status/${encodeURIComponent(status)}`, { method: "POST" }),
   delete: (id: number) => apiCall(`/leads/${id}`, { method: "DELETE" }),
 };
 
 // ANALYTICS
 export const analyticsAPI = {
   dashboard: (userId: number) => apiCall(`/analytics/dashboard/${userId}`),
-  eventTraffic: (userId: number, days = 7) => apiCall(`/analytics/events/${userId}/traffic?days=${days}`),
+  eventTraffic: (userId: number, days = 7) =>
+    apiCall(`/analytics/events/${userId}/traffic?days=${days}`),
   eventPerformance: (eventId: number) => apiCall(`/analytics/event/${eventId}/performance`),
   leadsFunnel: (userId: number) => apiCall(`/analytics/leads/${userId}/funnel`),
-  topPhotos: (userId: number, limit = 10) => apiCall(`/analytics/top-photos/${userId}?limit=${limit}`),
+  topPhotos: (userId: number, limit = 10) =>
+    apiCall(`/analytics/top-photos/${userId}?limit=${limit}`),
 };
 
 // GUESTBOOK
 export const guestbookAPI = {
-  sign: (eventId: number, data: { name: string; message: string }) => apiCall(`/guestbook/${eventId}`, { method: "POST", body: JSON.stringify(data) }),
+  sign: (eventId: number, data: { name: string; message: string }) =>
+    apiCall(`/guestbook/${eventId}`, { method: "POST", body: JSON.stringify(data) }),
   list: (eventId: number) => apiCall(`/guestbook/${eventId}`),
   listPending: (eventId: number) => apiCall(`/guestbook/${eventId}/pending`),
-  approve: (eventId: number, entryId: number) => apiCall(`/guestbook/${eventId}/${entryId}/approve`, { method: "POST" }),
-  remove: (eventId: number, entryId: number) => apiCall(`/guestbook/${eventId}/${entryId}`, { method: "DELETE" }),
+  approve: (eventId: number, entryId: number) =>
+    apiCall(`/guestbook/${eventId}/${entryId}/approve`, { method: "POST" }),
+  remove: (eventId: number, entryId: number) =>
+    apiCall(`/guestbook/${eventId}/${entryId}`, { method: "DELETE" }),
 };
 
 // STUDIO
@@ -165,9 +188,38 @@ export const studioAPI = {
     });
     if (!response.ok) {
       let message = "Upload failed";
-      try { message = (await response.json()).detail || message; } catch {}
+      try {
+        message = (await response.json()).detail || message;
+      } catch {}
       throw new Error(message);
     }
     return response.json();
   },
+};
+
+// PORTFOLIO
+export interface PortfolioSection {
+  id: number;
+  section_type: string;
+  title: string;
+  content: Record<string, any>;
+  position: number;
+  visible: boolean;
+}
+
+export const portfolioAPI = {
+  get: () => apiCall("/portfolio/me"),
+
+  update: (sections: PortfolioSection[]) =>
+    apiCall("/portfolio/me", {
+      method: "PUT",
+      body: JSON.stringify({
+        sections,
+      }),
+    }),
+
+  deleteSection: (id: number) =>
+    apiCall(`/portfolio/me/${id}`, {
+      method: "DELETE",
+    }),
 };

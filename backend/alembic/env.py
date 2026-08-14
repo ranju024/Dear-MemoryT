@@ -8,6 +8,7 @@ from sqlalchemy import pool
 from alembic import context
 from app.database import Base
 from app import models
+from app.models.portfolio_section import PortfolioSection
 
 load_dotenv()
 

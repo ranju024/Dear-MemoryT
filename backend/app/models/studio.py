@@ -50,5 +50,11 @@ class Studio(Base):
     # Relationships
     user = relationship("User", back_populates="studio")
 
+    portfolio_sections = relationship(
+        "PortfolioSection",
+        back_populates="studio",
+        cascade="all, delete-orphan",
+        order_by="PortfolioSection.position",
+    )
     def __repr__(self):
         return f"<Studio {self.name}>"
