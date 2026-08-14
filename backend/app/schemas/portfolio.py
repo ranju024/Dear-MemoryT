@@ -24,4 +24,4 @@ class PortfolioResponse(BaseModel):
 
 class PortfolioUpdate(BaseModel):
     sections: List[PortfolioSectionBase]
-    
+      
