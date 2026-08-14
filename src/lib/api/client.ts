@@ -208,6 +208,7 @@ export interface PortfolioSection {
 }
 
 export const portfolioAPI = {
+  // Dashboard/editor
   get: () => apiCall("/portfolio/me"),
 
   update: (sections: PortfolioSection[]) =>
@@ -222,4 +223,7 @@ export const portfolioAPI = {
     apiCall(`/portfolio/me/${id}`, {
       method: "DELETE",
     }),
+
+  // Public portfolio
+  getPublicBySlug: (slug: string) => apiCall(`/portfolio/slug/${encodeURIComponent(slug)}`),
 };

@@ -64,6 +64,44 @@ def section_to_response(section: PortfolioSection):
         visible=section.visible,
     )
 
+@router.get("/slug/{slug}", response_model=PortfolioResponse)
+async def get_public_portfolio(
+    slug: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Get the public portfolio for a studio by slug.
+    No authentication required.
+    """
+
+    studio = (
+        db.query(Studio)
+        .filter(Studio.slug == slug)
+        .first()
+    )
+
+    if not studio:
+        raise HTTPException(
+            status_code=404,
+            detail="Studio not found",
+        )
+
+    sections = (
+        db.query(PortfolioSection)
+        .filter(
+            PortfolioSection.studio_id == studio.id,
+            PortfolioSection.visible == True,
+        )
+        .order_by(PortfolioSection.position.asc())
+        .all()
+    )
+
+    return {
+        "sections": [
+            section_to_response(section)
+            for section in sections
+        ]
+    }
 
 @router.get("/me", response_model=PortfolioResponse)
 async def get_my_portfolio(

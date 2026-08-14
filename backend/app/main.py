@@ -94,8 +94,8 @@ app.include_router(albums.router, prefix="/api/albums", tags=["albums"])
 app.include_router(leads.router, prefix="/api/leads", tags=["leads"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 app.include_router(studio.router, prefix="/api/studio", tags=["studio"])
-app.include_router(portfolio.router, prefix="/api/portfolio", tags=["portfolio"])
 app.include_router(guestbook.router, prefix="/api/guestbook", tags=["guestbook"])
+app.include_router(portfolio.router, prefix="/api/portfolio", tags=["portfolio"])
 
 @app.get("/")
 async def root():
