@@ -16,6 +16,7 @@ from .api.routes import (
     studio,
     guestbook,
     portfolio,
+    subscription,
 )
 
 import logging
@@ -193,6 +194,11 @@ app.include_router(
     tags=["portfolio"],
 )
 
+app.include_router(
+    subscription.router,
+    prefix="/api/subscription",
+    tags=["subscription"],
+) 
 
 # ---------------------------------------------------------
 # Health / root

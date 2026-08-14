@@ -67,6 +67,28 @@ export const authAPI = {
   getCurrentUser: () => apiCall("/auth/me"),
 };
 
+// SUBSCRIPTION
+export interface SubscriptionPlan {
+  id?: string;
+  plan: string;
+  name: string;
+  price: number;
+  description: string;
+  features: string[];
+}
+
+export const subscriptionAPI = {
+  getPlans: () => apiCall("/subscription/plans"),
+
+  getMe: () => apiCall("/subscription/me"),
+
+  update: (plan: string) =>
+    apiCall("/subscription/me", {
+      method: "PUT",
+      body: JSON.stringify({ plan }),
+    }),
+};
+
 // EVENTS
 export const eventsAPI = {
   create: (data: any) => apiCall("/events/", { method: "POST", body: JSON.stringify(data) }),
