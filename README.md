@@ -1,199 +1,852 @@
-
 # Dear-Memory
 
-A full-stack photographer portfolio & event gallery platform. Photographers can manage events, upload and organize photos, customize their studio's branding, and share beautiful public galleries with their clients.
+Dear-Memory is a full-stack photography portfolio and event gallery platform designed for photographers and photography studios.
 
-**Repo:** [github.com/ranju024/Dear-Memory](https://github.com/ranju024/Dear-Memory) — active development on the `backend-feature` branch.
+It allows photographers to manage their studio, create photography events, upload and organize photos, create albums, publish public galleries, manage leads, customize studio branding, view analytics, and offer subscription plans.
 
----
+The project contains:
 
-## ✨ Features
-
-- **JWT authentication** — register/login with bcrypt-hashed passwords and token-based auth
-- **Event management** — create, edit, and organize photography events (weddings, graduations, etc.)
-- **Media library** — upload and manage photos per event
-- **Albums** — group photos into curated collections
-- **Studio Brand Kit** — customize primary/background/accent/text colors, heading & body fonts, and watermark text; applied dynamically across public-facing pages
-- **Public galleries** — shareable event gallery pages (`/event/:slug`) and studio profile pages (`/studio/:slug`)
-- **Analytics** — track views, visitors, favorites per event
-- **Dashboard** — central hub for managing all studio activity
-- 🚧 **Leads/CRM** — in progress
+- A React/TanStack frontend at the repository root
+- A FastAPI backend inside `backend/`
+- PostgreSQL for production
+- SQLAlchemy ORM and Alembic migrations
+- JWT-based authentication
+- Image upload and processing
+- eSewa sandbox payment integration
 
 ---
 
-## 🛠 Tech Stack
+## Repository
 
-**Backend**
+GitHub: https://github.com/ranju024/Dear-MemoryT
 
-- FastAPI (31+ REST endpoints)
-- SQLAlchemy ORM
-- SQLite
-- Alembic (migrations)
-- JWT auth via `python-jose`, password hashing via `passlib` (bcrypt)
+Production backend: https://dear-memoryt.onrender.com
 
-**Frontend**
+> The frontend deployment is separate from the backend deployment.
 
-- TanStack Start
+---
+
+# Features
+
+## Authentication
+
+- User registration
+- User login
+- JWT authentication
+- Password hashing with bcrypt
+- Current-user authentication
+- Automatic frontend logout when a `401 Unauthorized` response is received
+- JWT token stored in browser `localStorage`
+
+The frontend sends the JWT using:
+
+```text
+Authorization: Bearer <token>
+```
+
+---
+
+## Studio Management
+
+- Create and manage a photography studio
+- Studio profile
+- Studio slug
+- Studio logo upload
+- Studio statistics
+- Public studio information
+
+---
+
+## Events
+
+Photographers can:
+
+- Create events
+- Edit events
+- View events
+- Delete events
+- Publish events
+- Access events through public slugs
+- Organize photography work by event
+
+Public event route:
+
+```text
+/event/:slug
+```
+
+---
+
+## Photos
+
+- Upload photos to events
+- View event photos
+- Update photo information
+- Favorite/unfavorite photos
+- Delete photos
+- Download photos
+- Image processing through Pillow
+- JPEG, PNG, WebP, and GIF support
+
+---
+
+## Albums
+
+Photographers can:
+
+- Create albums
+- Edit albums
+- Delete albums
+- Add photos to albums
+- Remove photos from albums
+- View album contents
+
+---
+
+## Public Galleries
+
+Examples:
+
+```text
+/event/:slug
+/studio/:slug
+```
+
+---
+
+## Portfolio
+
+The portfolio system supports:
+
+- Portfolio sections
+- Section ordering
+- Section visibility
+- Portfolio editing
+- Public portfolio access through studio slugs
+
+---
+
+## Studio Brand Kit
+
+Studios can customize:
+
+- Primary color
+- Background color
+- Accent color
+- Text color
+- Heading font
+- Body font
+- Watermark text
+
+---
+
+## Leads / CRM
+
+Supported operations include:
+
+- Create leads
+- Create public leads
+- List leads
+- Filter leads by status
+- View individual leads
+- Update leads
+- Update lead status
+- Delete leads
+
+---
+
+## Analytics
+
+The backend provides analytics for:
+
+- Dashboard statistics
+- Event traffic
+- Event performance
+- Lead funnel
+- Top-performing photos
+
+---
+
+## Guestbook
+
+Visitors can sign the guestbook.
+
+Studio owners can:
+
+- View guestbook entries
+- View pending entries
+- Approve entries
+- Remove entries
+
+---
+
+## Subscription Plans
+
+### Starter
+
+- Free
+- 1 active event
+- Up to 250 photos
+- Watermarked downloads
+- Free plan is currently intended to remain active indefinitely
+
+### Creative
+
+- Rs. 29
+- Unlimited events
+- Up to 10,000 photos per event
+- Original downloads
+- One-month subscription period
+
+### Agency
+
+- Rs. 89
+- Unlimited events
+- Unlimited photos
+- Original downloads
+- Lifetime plan
+
+Subscription checkout is integrated with the backend and eSewa sandbox payment flow.
+
+> Payment functionality is currently using the eSewa sandbox environment and is not yet a production payment configuration.
+
+---
+
+# Tech Stack
+
+## Frontend
+
 - React 19
 - TypeScript
+- TanStack Start
+- TanStack Router
+- Vite
 - Tailwind CSS
-- shadcn/ui components
+- shadcn/ui
+- Lucide React
+- React Hook Form
+- Recharts
+
+The frontend lives at the repository root.
+
+There is **no separate `frontend/` directory**.
+
+## Backend
+
+- Python
+- FastAPI
+- Uvicorn
+- SQLAlchemy
+- PostgreSQL
+- Psycopg 3
+- Alembic
+- Pydantic
+- Pydantic Settings
+- python-dotenv
+- Passlib
+- bcrypt
+- python-jose
+- PyJWT
+- Pillow
+- python-multipart
+- HTTPX
 
 ---
 
-## 📁 Project Structure
+# Project Structure
 
-```
-Dear-Memory/
+```text
+Dear-MemoryT/
+│
 ├── backend/
-│   ├── alembic/                 # DB migrations
-│   │   └── versions/
+│   ├── alembic/
+│   │   ├── versions/
+│   │   └── env.py
 │   ├── app/
 │   │   ├── api/
-│   │   │   └── routes/          # auth.py, studio.py, events, photos, albums, etc.
-│   │   ├── models/               # SQLAlchemy models (user.py, studio.py, event.py, photo.py...)
-│   │   ├── schemas/              # Pydantic schemas (auth.py, lead_studio.py, ...)
-│   │   ├── config.py             # loads SECRET_KEY, ALGORITHM, etc. from .env
-│   │   └── database.py           # DB session & engine setup
-│   ├── uploads/                   # uploaded media (UPLOAD_DIR, relative to backend/)
+│   │   │   └── routes/
+│   │   ├── models/
+│   │   ├── schemas/
+│   │   ├── services/
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   └── main.py
+│   ├── uploads/
 │   ├── logs/
+│   ├── .env
+│   ├── .env.example
 │   ├── alembic.ini
 │   └── requirements.txt
 │
-└── frontend/
-    └── src/
-        ├── router.tsx, routeTree.gen.ts, server.ts, start.ts, styles.css
-        ├── components/
-        │   ├── ImageLightbox.tsx
-        │   ├── app/AppShell.tsx
-        │   ├── site/ (SiteNav.tsx, SiteFooter.tsx)
-        │   └── ui/ (shadcn/ui primitives)
-        ├── hooks/use-mobile.tsx
-        ├── lib/
-        │   ├── config.server.ts, utils.ts
-        │   ├── api/client.ts       # API client
-        │   └── mock/data.ts        # mock data, still used on some pages (e.g. studio.$slug.tsx)
-        └── routes/                 # file-based routing
-            ├── dashboard.tsx / dashboard.index.tsx
-            ├── dashboard.events.$id.tsx / .index.tsx / .new.tsx
-            ├── dashboard.albums.$id.tsx / .index.tsx / .new.tsx
-            ├── dashboard.media.tsx, dashboard.analytics.tsx
-            ├── dashboard.brand.tsx     # Brand Kit settings page
-            ├── dashboard.portfolio.tsx, dashboard.customize.tsx, dashboard.builder.tsx
-            ├── event.$slug.tsx         # public event gallery
-            ├── studio.$slug.tsx        # public studio profile
-            ├── login.tsx, register.tsx, index.tsx, pricing.tsx, templates.tsx
-            └── __root.tsx
+├── src/
+│   ├── components/
+│   ├── hooks/
+│   ├── lib/
+│   │   ├── api/
+│   │   │   └── client.ts
+│   │   ├── config.server.ts
+│   │   └── utils.ts
+│   ├── routes/
+│   ├── router.tsx
+│   ├── routeTree.gen.ts
+│   ├── server.ts
+│   ├── start.ts
+│   └── styles.css
+│
+├── public/
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+├── components.json
+├── .env.example
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## 🚀 Getting Started
+# Backend Setup
 
-### Prerequisites
+## Requirements
 
 - Python 3.10+
+- PostgreSQL
 - Node.js 18+
-- npm or pnpm
+- npm
 
-### Backend setup
+From the project root:
 
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate       # Windows
-# source venv/bin/activate  # Mac/Linux
+```
+
+Windows:
+
+```bash
+venv\Scripts\activate
+```
+
+macOS/Linux:
+
+```bash
+source venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
 
-Copy `.env.example` to `.env` and adjust values as needed:
+---
+
+# Backend Environment Variables
+
+Create:
+
+```text
+backend/.env
+```
+
+The `.env` file must not be committed to Git.
+
+Example:
 
 ```env
-# Database Configuration
-DATABASE_URL=sqlite:///./dear_memory.db
+DATABASE_URL=postgresql+psycopg://dear_memory_user:password@localhost:5432/dear_memory
 
-# JWT Configuration
-SECRET_KEY=your-super-secret-key-change-this-in-production
+SECRET_KEY=your-local-development-secret
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-# File Upload
 MAX_UPLOAD_SIZE=10485760
 UPLOAD_DIR=./uploads
 
-# API Configuration
 API_URL=http://localhost:8000
-FRONTEND_URL=http://localhost:5173
+BACKEND_URL=http://localhost:8000
+FRONTEND_URL=http://localhost:8080
 
-# Environment
 ENV=development
+
+CORS_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+
+SUBSCRIPTIONS_ALLOW_TEST_CHANGES=false
+
+ESEWA_PRODUCT_CODE=EPAYTEST
+ESEWA_SECRET_KEY=your-esewa-sandbox-secret
+ESEWA_PAYMENT_URL=https://rc-epay.esewa.com.np/api/epay/main/v2/form
+ESEWA_STATUS_URL=https://rc.esewa.com.np/api/epay/transaction/status/
+
+ESEWA_SUCCESS_URL=http://localhost:8000/api/subscription/esewa/success
+ESEWA_FAILURE_URL=http://localhost:8000/api/subscription/esewa/failure
 ```
 
-Run migrations, then start the server:
+Do not commit real database credentials, JWT secrets, or payment credentials.
+
+---
+
+# Database
+
+The deployed application uses PostgreSQL.
+
+The database connection is configured through:
+
+```text
+DATABASE_URL
+```
+
+The database layer is implemented in:
+
+```text
+backend/app/database.py
+```
+
+Alembic handles schema migrations.
+
+Run:
 
 ```bash
 alembic upgrade head
+```
+
+---
+
+# Running the Backend Locally
+
+From:
+
+```text
+Dear-MemoryT/backend
+```
+
+run:
+
+```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-Backend will be available at `http://localhost:8000`.
-Interactive API docs: `http://localhost:8000/docs`
+Backend:
 
-> All routes are mounted under an `/api` prefix (e.g. `/api/studio/me`, `/api/auth/login`) — keep this in mind when configuring the frontend's API base URL.
+```text
+http://localhost:8000
+```
 
-### Frontend setup
+FastAPI documentation:
+
+```text
+http://localhost:8000/docs
+```
+
+---
+
+# API Structure
+
+The API is mounted under:
+
+```text
+/api
+```
+
+Examples:
+
+```text
+POST /api/auth/register
+POST /api/auth/login
+GET  /api/auth/me
+
+GET  /api/events/
+POST /api/events/
+GET  /api/events/{id}
+PUT  /api/events/{id}
+DELETE /api/events/{id}
+
+GET  /api/studio/me
+PUT  /api/studio/me
+
+GET  /api/subscription/plans
+GET  /api/subscription/me
+POST /api/subscription/checkout
+```
+
+---
+
+# Frontend Setup
+
+The frontend is located at the repository root.
+
+Do **not** run:
 
 ```bash
 cd frontend
+```
+
+Instead:
+
+```bash
 npm install
 npm run dev
 ```
 
-Frontend will be available at `http://localhost:8080` (adjust if your dev server assigns a different port).
+---
+
+# Frontend API Configuration
+
+The frontend API client is:
+
+```text
+src/lib/api/client.ts
+```
+
+The API base URL is controlled through:
+
+```text
+VITE_API_URL
+```
+
+It falls back to:
+
+```text
+http://localhost:8000/api
+```
+
+when the variable is not provided.
+
+For production:
+
+```env
+VITE_API_URL=https://dear-memoryt.onrender.com/api
+```
 
 ---
 
-## 🔑 Authentication
+# Local Frontend Environment
 
-Auth lives in `app/api/routes/auth.py`. Flow:
+A frontend `.env` file is optional for local development because of the localhost fallback.
 
-1. **`POST /api/auth/register`** — creates a user with a bcrypt-hashed password
-2. **`POST /api/auth/login`** — verifies credentials, returns a JWT (`access_token`) signed with `SECRET_KEY`/`ALGORITHM` from `.env`, with a `sub` claim holding the user's id
-3. **`GET /api/auth/me`** and all protected routes — expect the token and decode it via `get_current_user()`
+If desired, create `.env` in the project root:
 
-> **Current convention:** the token is passed as a `?token=` query parameter (e.g. `PUT /api/studio/me?token=...`) rather than an `Authorization: Bearer` header, though `get_current_user()` will also strip a `Bearer ` prefix if present. This works, but isn't the typical FastAPI pattern (usually `OAuth2PasswordBearer` + header) — worth revisiting before this goes to production, since query-param tokens can end up logged in server/proxy access logs.
+```env
+VITE_API_URL=http://localhost:8000/api
+```
 
----
-
-## 🎨 Studio Brand Kit
-
-Each studio can customize, via the **Brand Kit** page (`dashboard.brand.tsx`):
-
-| Field                | Description                               |
-| -------------------- | ----------------------------------------- |
-| `primary_color`    | Main brand accent color (buttons, labels) |
-| `background_color` | Page background                           |
-| `accent_color`     | Secondary accent                          |
-| `text_color`       | Body text color                           |
-| `heading_font`     | Font for headings                         |
-| `body_font`        | Font for body text                        |
-| `watermark_text`   | Text watermark applied to photos          |
-
-Saved via `PUT /api/studio/me`, and applied on public pages as CSS custom properties (`--brand-primary`, `--brand-text`, etc.) set on the page's root element — currently wired into `event.$slug.tsx`; `studio.$slug.tsx` still runs on mock data and needs the same treatment.
+This file is ignored by Git.
 
 ---
 
-## 🧭 Roadmap
+# Production Frontend
 
-- [X] Core auth, events, albums, media library
-- [X] Studio Brand Kit (save + apply to `event.$slug.tsx`)
-- [ ] Wire real data + brand colors into `studio.$slug.tsx` (currently mock data)
-- [ ] Leads/CRM page
-- [ ] Move token auth from query param to `Authorization: Bearer` header
-- [ ] Move frontend off hardcoded `localhost:8000` API URLs to env-based config
+Production backend:
+
+```text
+https://dear-memoryt.onrender.com
+```
+
+Production API:
+
+```text
+https://dear-memoryt.onrender.com/api
+```
+
+The frontend hosting provider should define:
+
+```text
+VITE_API_URL=https://dear-memoryt.onrender.com/api
+```
+
+`VITE_*` variables are exposed to frontend code and must not contain private secrets.
 
 ---
 
-## 🤝 Contributing
+# Authentication
 
-This is a collaborative project. Active work happens on the `backend-feature` branch — branch off of it rather than `main` unless told otherwise, and open a PR for review before merging.
+The frontend stores the JWT access token in browser `localStorage`.
+
+Authenticated requests use:
+
+```http
+Authorization: Bearer <token>
+```
+
+When the backend returns `401 Unauthorized`, the frontend clears the token and redirects the user to `/login`.
+
+---
+
+# Image Uploads
+
+Image processing uses Pillow.
+
+Supported image types include:
+
+- JPEG
+- PNG
+- WebP
+- GIF
+
+Uploaded files are stored according to:
+
+```text
+UPLOAD_DIR
+```
+
+Production deployments should use persistent storage for uploaded media if files must survive service restarts or redeployments.
+
+---
+
+# eSewa
+
+The current integration uses eSewa sandbox.
+
+Sandbox product code:
+
+```text
+EPAYTEST
+```
+
+Sandbox endpoints:
+
+```text
+https://rc-epay.esewa.com.np/api/epay/main/v2/form
+https://rc.esewa.com.np/api/epay/transaction/status/
+```
+
+Production eSewa credentials and endpoints must be configured separately before accepting real payments.
+
+Never commit eSewa secrets to Git.
+
+---
+
+# Deployment
+
+## Backend
+
+The backend is deployed on Render:
+
+```text
+https://dear-memoryt.onrender.com
+```
+
+The Render service uses `backend/` as the backend application directory.
+
+Production start command:
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+Important production environment variables include:
+
+```text
+DATABASE_URL
+SECRET_KEY
+FRONTEND_URL
+CORS_ORIGINS
+UPLOAD_DIR
+ESEWA_PRODUCT_CODE
+ESEWA_SECRET_KEY
+ESEWA_PAYMENT_URL
+ESEWA_STATUS_URL
+ESEWA_SUCCESS_URL
+ESEWA_FAILURE_URL
+```
+
+---
+
+## Frontend
+
+The frontend will be deployed separately.
+
+Because the frontend is at the repository root, the frontend hosting service should build from the repository root.
+
+Configure:
+
+```text
+VITE_API_URL=https://dear-memoryt.onrender.com/api
+```
+
+---
+
+# Environment Variables and Secrets
+
+Backend secrets belong in:
+
+```text
+backend/.env
+```
+
+Examples:
+
+```text
+DATABASE_URL
+SECRET_KEY
+ESEWA_SECRET_KEY
+```
+
+These must never be committed.
+
+The frontend only needs the public API URL:
+
+```text
+VITE_API_URL
+```
+
+Do not place private credentials in frontend environment variables.
+
+---
+
+# Git
+
+The repository ignores local environment files and local databases.
+
+Important ignored files include:
+
+```text
+.env
+.env.*
+*.db
+*.sqlite
+*.sqlite3
+node_modules/
+dist/
+```
+
+Never commit:
+
+```text
+backend/.env
+```
+
+or files containing real credentials.
+
+---
+
+# Database Migrations
+
+Create a migration from the backend directory:
+
+```bash
+alembic revision --autogenerate -m "describe the change"
+```
+
+Always review generated migrations before applying them.
+
+Apply migrations:
+
+```bash
+alembic upgrade head
+```
+
+Useful commands:
+
+```bash
+alembic current
+alembic heads
+alembic history
+```
+
+---
+
+# Development Workflow
+
+```text
+1. Make changes locally
+        ↓
+2. Test frontend
+        ↓
+3. Test backend
+        ↓
+4. Test API/database functionality
+        ↓
+5. Commit changes
+        ↓
+6. Push to GitHub
+        ↓
+7. Deploy
+        ↓
+8. Test production
+        ↓
+9. Collect client feedback
+        ↓
+10. Continue development
+```
+
+---
+
+# Production Checklist
+
+Before full production use:
+
+- [ ] Configure persistent storage for uploaded photos
+- [ ] Replace eSewa sandbox configuration with production configuration
+- [ ] Verify CORS for the final frontend domain
+- [ ] Verify database backups
+- [ ] Use strong production secrets
+- [ ] Review authentication and authorization
+- [ ] Review file upload validation and limits
+- [ ] Configure frontend production environment variables
+- [ ] Test public galleries
+- [ ] Test photo uploads/downloads
+- [ ] Test subscription checkout
+- [ ] Test payment callbacks
+- [ ] Test database migrations
+- [ ] Configure a custom domain if required
+
+---
+
+# Current Status
+
+## Backend
+
+Deployed and running on Render:
+
+```text
+https://dear-memoryt.onrender.com
+```
+
+## Frontend
+
+The frontend is being prepared for its first deployment for this repository.
+
+It will communicate with:
+
+```text
+https://dear-memoryt.onrender.com/api
+```
+
+---
+
+# Roadmap
+
+- [x] Authentication
+- [x] User registration/login
+- [x] JWT authentication
+- [x] Studio management
+- [x] Event management
+- [x] Photo management
+- [x] Album management
+- [x] Public event galleries
+- [x] Studio pages
+- [x] Portfolio management
+- [x] Studio Brand Kit
+- [x] Analytics
+- [x] Guestbook
+- [x] Lead/CRM API
+- [x] Subscription plans
+- [x] eSewa sandbox integration
+- [x] PostgreSQL production database
+- [x] Alembic migrations
+- [x] Production backend deployment
+- [ ] Production frontend deployment
+- [ ] Production eSewa integration
+- [ ] Persistent production media storage
+- [ ] Custom production domain
+- [ ] Client feedback iteration
+- [ ] Additional production hardening
+
+---
+
+# License
+
+This project is currently maintained as a client project.
+
+All rights and licensing terms should be determined according to the project's client agreement and deployment requirements.
