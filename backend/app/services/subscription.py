@@ -3,6 +3,7 @@ import os
 from fastapi import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
 
 from ..models.event import Event, EventStatus
 from ..models.photo import Photo
@@ -15,6 +16,11 @@ VALID_PLANS = {
     "agency",
 }
 
+PLAN_LEVELS = {
+    "starter": 0,
+    "creative": 1,
+    "agency": 2,
+}
 
 PLAN_LIMITS = {
     "starter": {
@@ -77,6 +83,30 @@ def normalize_plan(plan: str | None) -> str:
 
     return plan
 
+def get_effective_plan(user: User) -> str:
+    """
+    Return the plan the user is actually entitled to right now.
+
+    Starter:
+        Never expires.
+
+    Creative:
+        Expires after 30 days.
+
+    Agency:
+        Lifetime.
+    """
+
+    plan = normalize_plan(user.plan)
+
+    if plan == "creative":
+        if (
+            user.plan_expires_at is not None
+            and datetime.utcnow() >= user.plan_expires_at
+        ):
+            return "starter"
+
+    return plan
 
 def get_plan_limits(plan: str | None) -> dict:
     return PLAN_LIMITS[normalize_plan(plan)]
@@ -125,7 +155,7 @@ def enforce_event_limit(
     Prevent a user from creating an event beyond their plan.
     """
 
-    plan = normalize_plan(user.plan)
+    plan = get_effective_plan(user)
     max_events = PLAN_LIMITS[plan]["max_active_events"]
 
     if max_events is None:
@@ -161,7 +191,7 @@ def enforce_photo_limit(
     Prevent uploads beyond the plan's per-event photo limit.
     """
 
-    plan = normalize_plan(user.plan)
+    plan = get_effective_plan(user)
     max_photos = PLAN_LIMITS[plan]["max_photos_per_event"]
 
     if max_photos is None:

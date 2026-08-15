@@ -28,34 +28,80 @@ export const getMediaUrl = (url?: string | null) => {
   return `${API_ORIGIN}${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
-async function apiCall(endpoint: string, options: RequestInit = {}) {
+async function apiCall<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
+
   const headers = new Headers(options.headers);
+
   if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  // ---------------------------------------------------------
+  // Authentication failure
+  // ---------------------------------------------------------
 
   if (response.status === 401) {
     clearToken();
+
     if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
       window.location.href = "/login";
     }
+
+    throw new Error("Your session has expired. Please log in again.");
   }
 
+  // ---------------------------------------------------------
+  // API error
+  // ---------------------------------------------------------
+
   if (!response.ok) {
-    let message = "API Error";
+    let message = "Something went wrong.";
+
     try {
       const error = await response.json();
-      message = error.detail || message;
-    } catch {}
+
+      if (typeof error.detail === "string") {
+        message = error.detail;
+      } else if (error.detail && typeof error.detail.message === "string") {
+        message = error.detail.message;
+      } else if (error.detail && typeof error.detail.code === "string") {
+        message = error.detail.code;
+      } else if (typeof error.message === "string") {
+        message = error.message;
+      }
+    } catch {
+      // Keep the default message.
+    }
+
     throw new Error(message);
   }
 
-  if (response.status === 204) return null;
-  return response.json();
+  // ---------------------------------------------------------
+  // Successful response
+  // ---------------------------------------------------------
+
+  // Some endpoints may return 204 No Content.
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const contentType = response.headers.get("content-type");
+
+  if (contentType?.includes("application/json")) {
+    return (await response.json()) as T;
+  }
+
+  return (await response.text()) as T;
 }
 
 // AUTH
@@ -75,6 +121,16 @@ export interface SubscriptionPlan {
   price: number;
   description: string;
   features: string[];
+
+  limits?: {
+    max_active_events: number | null;
+    max_photos_per_event: number | null;
+    original_downloads: boolean;
+  };
+
+  started_at?: string | null;
+  expires_at?: string | null;
+  is_lifetime?: boolean;
 }
 
 export interface CheckoutResponse {
@@ -101,13 +157,13 @@ export interface CheckoutResponse {
 export const subscriptionAPI = {
   getPlans: () => apiCall("/subscription/plans"),
 
-  getMe: () => apiCall("/subscription/me"),
+  getMe: () => apiCall<SubscriptionPlan>("/subscription/me"),
 
   checkout: (plan: string) =>
-    apiCall("/subscription/checkout", {
+    apiCall<CheckoutResponse>("/subscription/checkout", {
       method: "POST",
       body: JSON.stringify({ plan }),
-    }) as Promise<CheckoutResponse>,
+    }),
 };
 
 // EVENTS

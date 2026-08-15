@@ -25,7 +25,15 @@ class User(Base):
         default="starter",
         server_default="starter",
     )
+    plan_started_at = Column(
+        DateTime,
+        nullable=True,
+    )
 
+    plan_expires_at = Column(
+        DateTime,
+        nullable=True,
+    )
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(
         DateTime,

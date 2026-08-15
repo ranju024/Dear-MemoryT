@@ -31,6 +31,7 @@ from ...schemas.photo import (
 )
 from ...services.subscription import (
     enforce_photo_limit,
+    get_effective_plan,
 )
 from .auth import get_current_user
 from ...config import (
@@ -686,9 +687,10 @@ async def download_photo(
     photo.downloads += 1
     db.commit()
 
-    paid = is_paid_plan(
-        getattr(owner, "plan", "starter")
-    )
+    paid = get_effective_plan(owner) in {
+        "creative",
+        "agency",
+    }
 
     # -----------------------------------------------------
     # PAID: original

@@ -88,29 +88,50 @@ const TIERS = [
 ];
 
 function Pricing() {
-  const [currentPlan, setCurrentPlan] = useState<string | null>(
-    null,
-  );
-  const [loading, setLoading] = useState(true);
-  const [changingPlan, setChangingPlan] = useState<string | null>(
-    null,
-  );
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [currentPlan, setCurrentPlan] =
+    useState<string | null>(null);
+
+  const [loggedIn, setLoggedIn] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [changingPlan, setChangingPlan] =
+    useState<string | null>(null);
+
+  const [message, setMessage] =
+    useState<string | null>(null);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const planLevels = {
+    starter: 0,
+    creative: 1,
+    agency: 2,
+  } as const;
+
+  type PlanId = keyof typeof planLevels;
 
   useEffect(() => {
     const loadSubscription = async () => {
       try {
         setLoading(true);
 
+        // Check whether the user is authenticated.
         await authAPI.getCurrentUser();
 
+        // Get the user's actual current plan
+        // from the backend.
         const subscription =
           await subscriptionAPI.getMe();
 
+        setLoggedIn(true);
         setCurrentPlan(subscription.plan);
       } catch {
-        // User may simply be browsing while logged out.
+        // User is not logged in.
+        setLoggedIn(false);
         setCurrentPlan(null);
       } finally {
         setLoading(false);
@@ -120,32 +141,136 @@ function Pricing() {
     loadSubscription();
   }, []);
 
-  const startCheckout = async (planId: string) => {
+  const getPlanName = (planId: string) => {
+    const tier = TIERS.find(
+      (item) => item.id === planId,
+    );
+
+    return tier?.name || planId;
+  };
+
+  const showCurrentPlanMessage = () => {
+    if (!currentPlan) return;
+
+    const planName =
+      getPlanName(currentPlan);
+
+    setError(null);
+
+    setMessage(
+      `You're already on the ${planName} plan.`,
+    );
+  };
+
+  const startCheckout = async (
+    planId: string,
+  ) => {
     setMessage(null);
     setError(null);
 
     try {
       setChangingPlan(planId);
 
-      const checkout = await subscriptionAPI.checkout(planId);
+      /*
+       * Always get the latest subscription from
+       * the backend before starting payment.
+       *
+       * This prevents stale frontend state from
+       * starting an invalid checkout.
+       */
+      const subscription =
+        await subscriptionAPI.getMe();
 
-      const form = document.createElement("form");
+      const actualCurrentPlan =
+        subscription.plan;
+
+      setCurrentPlan(actualCurrentPlan);
+
+      /*
+       * User is already on this plan.
+       */
+      if (actualCurrentPlan === planId) {
+        setMessage(
+          `You're already on the ${getPlanName(
+            planId,
+          )} plan.`,
+        );
+
+        return;
+      }
+
+      /*
+       * Plan levels:
+       *
+       * Starter  = 0
+       * Creative = 1
+       * Agency   = 2
+       */
+      const planLevels: Record<
+        string,
+        number
+      > = {
+        starter: 0,
+        creative: 1,
+        agency: 2,
+      };
+
+      const currentLevel =
+        planLevels[actualCurrentPlan] ?? 0;
+
+      const requestedLevel =
+        planLevels[planId] ?? 0;
+
+      /*
+       * Never start payment for a downgrade.
+       */
+      if (
+        requestedLevel <= currentLevel
+      ) {
+        setError(
+          `You can't downgrade from ${getPlanName(
+            actualCurrentPlan,
+          )} to ${getPlanName(planId)}.`,
+        );
+
+        return;
+      }
+
+      /*
+       * Ask the backend to create the eSewa
+       * checkout.
+       */
+      const checkout =
+        await subscriptionAPI.checkout(
+          planId,
+        );
+
+      /*
+       * eSewa expects a POST form.
+       */
+      const form =
+        document.createElement("form");
 
       form.method = "POST";
-      form.action = checkout.payment_url;
+      form.action =
+        checkout.payment_url;
+
       form.style.display = "none";
 
-      Object.entries(checkout.fields).forEach(
-        ([key, value]) => {
-          const input = document.createElement("input");
+      Object.entries(
+        checkout.fields,
+      ).forEach(([key, value]) => {
+        const input =
+          document.createElement(
+            "input",
+          );
 
-          input.type = "hidden";
-          input.name = key;
-          input.value = String(value);
+        input.type = "hidden";
+        input.name = key;
+        input.value = String(value);
 
-          form.appendChild(input);
-        },
-      );
+        form.appendChild(input);
+      });
 
       document.body.appendChild(form);
 
@@ -156,37 +281,75 @@ function Pricing() {
           ? e.message
           : "Could not start payment.",
       );
-
+    } finally {
       setChangingPlan(null);
     }
   };
 
-  const changePlan = async (planId: string) => {
+  const handlePlanClick = async (
+    planId: string,
+  ) => {
     setMessage(null);
     setError(null);
 
-    try {
-      setChangingPlan(planId);
+    /*
+     * User isn't logged in.
+     *
+     * They need an account before starting
+     * a subscription.
+     */
+    if (!loggedIn) {
+      window.location.href =
+        "/register";
 
-      await subscriptionAPI.update(planId);
-
-      const subscription =
-        await subscriptionAPI.getMe();
-
-      setCurrentPlan(subscription.plan);
-
-      setMessage(
-        `Your plan is now ${subscription.name}.`,
-      );
-    } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Could not change your plan.",
-      );
-    } finally {
-      setChangingPlan(null);
+      return;
     }
+
+    /*
+     * Already on this plan.
+     */
+    if (currentPlan === planId) {
+      showCurrentPlanMessage();
+
+      return;
+    }
+
+    /*
+     * Starter is free, but we don't allow
+     * downgrading from a paid plan directly.
+     */
+    if (planId === "starter") {
+      setError(
+        `You're currently on the ${getPlanName(
+          currentPlan || "starter",
+        )} plan. Downgrading to Starter isn't available.`,
+      );
+
+      return;
+    }
+
+    /*
+     * Frontend safety check against downgrades.
+     *
+     * The backend still performs its own
+     * validation, so this is only for UX.
+     */
+
+    if (
+      currentPlan &&
+      planLevels[planId as PlanId] <=
+        planLevels[currentPlan as PlanId]
+    ) {
+      setError(
+        `You can't downgrade from ${getPlanName(
+          currentPlan,
+        )} to ${getPlanName(planId)}.`,
+      );
+
+      return;
+    }
+
+    await startCheckout(planId);
   };
 
   return (
@@ -203,15 +366,18 @@ function Pricing() {
         </h1>
 
         <p className="text-warm-gray max-w-xl mx-auto">
-          No setup fees. No per-photo charges. Cancel anytime.
+          No setup fees. No per-photo charges.
+          Upgrade whenever you need.
         </p>
 
+        {/* Success / information message */}
         {message && (
           <div className="mt-6 inline-block rounded-full bg-emerald/10 text-emerald px-5 py-3 text-sm font-medium">
             {message}
           </div>
         )}
 
+        {/* Error message */}
         {error && (
           <div className="mt-6 inline-block rounded-full bg-red-50 text-red-600 px-5 py-3 text-sm font-medium">
             {error}
@@ -227,6 +393,12 @@ function Pricing() {
 
             const isChanging =
               changingPlan === tier.id;
+
+            const isDowngrade =
+              loggedIn &&
+              currentPlan !== null &&
+              planLevels[tier.id as PlanId] <
+                planLevels[currentPlan as PlanId];
 
             return (
               <div
@@ -274,28 +446,42 @@ function Pricing() {
                 </p>
 
                 {isCurrent ? (
-                  <div
-                    className={`block text-center py-4 rounded-full font-bold mb-8 ${
+                  /*
+                   * Current plan
+                   */
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError(null);
+
+                      setMessage(
+                        `You're already on the ${tier.name} plan.`,
+                      );
+                    }}
+                    className={`w-full block text-center py-4 rounded-full font-bold mb-8 ${
                       tier.featured
-                        ? "bg-white/20 text-white"
-                        : "bg-emerald/10 text-emerald"
+                        ? "bg-white/20 text-white hover:bg-white/30"
+                        : "bg-emerald/10 text-emerald hover:bg-emerald/20"
                     }`}
                   >
                     ✓ Current plan
-                  </div>
+                  </button>
                 ) : (
+                  /*
+                   * Other plans
+                   */
                   <button
                     type="button"
                     disabled={
-                      loading || changingPlan !== null
+                      loading ||
+                      changingPlan !== null ||
+                      isDowngrade
                     }
-                    onClick={() => {
-                      if (tier.id === "starter") {
-                        window.location.href = "/register";
-                        return;
-                      }                      
-                      startCheckout(tier.id);
-                    }}
+                    onClick={() =>
+                      handlePlanClick(
+                        tier.id,
+                      )
+                    }
                     className={`w-full py-4 rounded-full font-bold mb-8 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       tier.featured
                         ? "bg-white text-emerald hover:bg-cream"
@@ -303,30 +489,34 @@ function Pricing() {
                     }`}
                   >
                     {isChanging
-                      ? "Redirecting to eSewa"
-                      : tier.cta}
+                      ? "Redirecting to eSewa..."
+                      : isDowngrade
+                        ? "Downgrade unavailable"
+                        : tier.cta}
                   </button>
                 )}
 
                 <ul className="space-y-3 text-sm">
-                  {tier.features.map((feature) => (
-                    <li
-                      key={feature}
-                      className="flex items-center gap-3"
-                    >
-                      <span
-                        className={`w-5 h-5 rounded-full grid place-items-center text-xs shrink-0 ${
-                          tier.featured
-                            ? "bg-white/20"
-                            : "bg-emerald/10 text-emerald"
-                        }`}
+                  {tier.features.map(
+                    (feature) => (
+                      <li
+                        key={feature}
+                        className="flex items-center gap-3"
                       >
-                        ✓
-                      </span>
+                        <span
+                          className={`w-5 h-5 rounded-full grid place-items-center text-xs shrink-0 ${
+                            tier.featured
+                              ? "bg-white/20"
+                              : "bg-emerald/10 text-emerald"
+                          }`}
+                        >
+                          ✓
+                        </span>
 
-                      {feature}
-                    </li>
-                  ))}
+                        {feature}
+                      </li>
+                    ),
+                  )}
                 </ul>
               </div>
             );
@@ -356,7 +546,7 @@ function Pricing() {
               },
               {
                 q: "Is there a free trial?",
-                a: "Yes — Creative and Agency both include a 14-day free trial. No credit card required.",
+                a: "Creative is available as a one-month trial for now. Agency is available as a lifetime plan during this early stage.",
               },
             ].map((faq) => (
               <details

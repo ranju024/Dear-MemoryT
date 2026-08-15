@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 import httpx
@@ -25,7 +25,11 @@ from ...database import get_db
 from ...models.payment import PaymentTransaction
 from ...models.user import User
 from .auth import get_current_user
-
+from ...services.subscription import (
+    get_effective_plan,
+    PLAN_DETAILS,
+    PLAN_LIMITS,
+)
 
 router = APIRouter()
 
@@ -40,7 +44,11 @@ PAID_PLANS = {
     "creative",
     "agency",
 }
-
+PLAN_LEVELS = {
+    "starter": 0,
+    "creative": 1,
+    "agency": 2,
+}
 
 PLAN_DETAILS = {
     "starter": {
@@ -79,16 +87,20 @@ PLAN_DETAILS = {
 class PlanUpdate(BaseModel):
     plan: str
 
-
+ 
 def plan_response(user: User):
-    plan = user.plan or "starter"
-
-    if plan not in VALID_PLANS:
-        plan = "starter"
+    plan = get_effective_plan(user)
 
     return {
         "plan": plan,
         **PLAN_DETAILS[plan],
+        "limits": PLAN_LIMITS[plan],
+        "started_at": user.plan_started_at,
+        "expires_at": user.plan_expires_at,
+        "is_lifetime": (
+            plan == "agency"
+            or plan == "starter"
+        ),
     }
 
 
@@ -192,20 +204,35 @@ async def create_checkout(
 
     current_plan = user.plan or "starter"
 
-    if requested_plan == current_plan:
-        return {
-            "status": "already_active",
-            "plan": current_plan,
-            "message": "This plan is already active.",
-        }
+    current_level = PLAN_LEVELS[current_plan]
+    requested_level = PLAN_LEVELS[requested_plan]
 
-    if requested_plan == "starter":
+    if requested_plan == current_plan:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                "Downgrades require the subscription "
-                "cancellation flow."
-            ),
+            detail={
+                "code": "PLAN_ALREADY_ACTIVE",
+                "message": (
+                    f"Your {PLAN_DETAILS[current_plan]['name']} "
+                    "plan is already active."
+                ),
+                "plan": current_plan,
+            },
+        )
+
+    if requested_level <= current_level:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "PLAN_DOWNGRADE_NOT_ALLOWED",
+                "message": (
+                    f"You cannot change from "
+                    f"{PLAN_DETAILS[current_plan]['name']} "
+                    f"to {PLAN_DETAILS[requested_plan]['name']}."
+                ),
+                "current_plan": current_plan,
+                "requested_plan": requested_plan,
+            },
         )
 
     if requested_plan not in PAID_PLANS:
@@ -438,7 +465,21 @@ async def esewa_success(
             f"{FRONTEND_URL}/pricing?payment=user_not_found"
         )
 
+    now = datetime.utcnow()
+
     user.plan = transaction.plan
+    user.plan_started_at = now
+
+    if transaction.plan == "creative":
+        user.plan_expires_at = now + timedelta(days=30)
+
+    elif transaction.plan == "agency":
+        # Agency is lifetime for now.
+        user.plan_expires_at = None
+
+    else:
+        # Starter never expires.
+        user.plan_expires_at = None
 
     db.commit()
 

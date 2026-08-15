@@ -25,7 +25,7 @@ UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
 
 # API
 API_URL = os.getenv("API_URL", "http://localhost:8000").rstrip("/")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:8080").rstrip("/")
 
 # eSewa sandbox
 ESEWA_PAYMENT_URL = os.getenv(
